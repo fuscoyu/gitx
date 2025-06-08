@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/goeoeo/gitx/repo"
 	"github.com/spf13/cobra"
@@ -9,31 +10,9 @@ import (
 )
 
 // configContentTpl 配置文件模板
-var configContentTpl = `
-log_level: 0  #debug:5
-
-patch:
-  plan_tgt_branch_list: [ "dev","qa" ] #默认计划要推的分支
-  branch_alias:  #分支别名
-    v6.0: QCE_V6.0-20220630
-    v6.1: QCE_V6.1-20221230
-    v6.2: QCE_V6.2-20231230
-
-gitLab_configs:
-  - base_url: https://git.yunify.com
-    token: "gitlab Access Tokens 用于自动创建mr,合并mr" 
-  - base_url: https://git.internal.yunify.com
-    token: "gitlab Access Tokens 用于自动创建mr,合并mr"
-
-repo:
-  doc:  #git项目简称
-    url: "https://git.internal.yunify.com/chenyu/doc" #项目https地址
-    path: "" #项目本地根路径,需要使用绝对路径
-    create_mr: true #自动创建mr
-    auto_merge_branch_list: ["dev","qa"] #自动合并的分支
-
-
-`
+//
+//go:embed config.yaml
+var configContentTpl string
 var try bool
 var InitCmd = &cobra.Command{
 	Use:   "init",

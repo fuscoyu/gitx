@@ -5,6 +5,7 @@ import (
 	"fmt"
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/goeoeo/gitx/model"
+	"github.com/goeoeo/gitx/util"
 	"github.com/sirupsen/logrus"
 	"github.com/zput/zxcTool/ztLog/zt_formatter"
 	"gopkg.in/yaml.v3"
@@ -99,32 +100,54 @@ func GetConfig(configPaths ...string) *Config {
 	return cfg
 }
 
-func (c *Config) Init() *Config {
-	//初始化RepoName
-	for k, v := range c.Repo {
-		if v.Name == "" {
-			v.Name = k
-		}
-		if v.Path == "" {
-			panic("需要配置项目的本地路径")
+// 解析当前目录信息
+func (c *Config) parsePwd() (err error) {
+	c.pwd = os.Getenv("PWD")
+	logrus.Debugf("当前目录:%s", c.pwd)
+
+	projectName := util.GetLastDir(c.pwd)
+
+	r := &Repo{
+		Name: util.GetLastDir(c.pwd),
+		Path: c.pwd,
+	}
+
+	if r.Url, err = util.FindOriginURL(c.pwd); err != nil {
+		return
+	}
+
+	find := false
+	for _, v := range c.Repo {
+		//配置文件中存在配置
+		if v.Name == projectName {
+			find = true
+			v.Url = util.Default(v.Url, r.Url)
+			v.Path = util.Default(v.Path, r.Path)
+			break
 		}
 
-		if !strings.HasPrefix(v.Path, "/") {
-			panic("项目路径需要配置为绝对路径")
-		}
+	}
+
+	if !find {
+		c.Repo[projectName] = r
+	}
+
+	return
+
+}
+
+func (c *Config) Init() *Config {
+	if err := c.parsePwd(); err != nil {
+		logrus.Fatalf("当前目标非git项目目录，err:%s", err)
 	}
 
 	if c.Patch.JiraDesc == "" {
 		c.Patch.JiraDesc = "x"
 	}
 
-	pwd := os.Getenv("PWD")
-	c.pwd = pwd
-	logrus.Debugf("当前目录:%s", pwd)
-
 	if c.Patch.CurrentProject == "" {
 		for k, v := range c.Repo {
-			if v.Path == pwd {
+			if v.Path == c.pwd {
 				c.Patch.CurrentProject = k
 			}
 		}
@@ -136,7 +159,7 @@ func (c *Config) Init() *Config {
 
 	//自动解析当前分支
 	if c.Patch.DevBranch == "" {
-		c.Patch.DevBranch = AutoBranch(pwd)
+		c.Patch.DevBranch = AutoBranch(c.pwd)
 	}
 
 	c.InitLog()

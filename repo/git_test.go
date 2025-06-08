@@ -148,3 +148,8 @@ func TestGetMergeRequest1(t *testing.T) {
 	fmt.Println(res)
 
 }
+
+func TestPath(t *testing.T) {
+	f := "/a/b/c"
+	fmt.Println(util.GetLastDir(f))
+}

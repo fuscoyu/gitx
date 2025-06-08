@@ -1,0 +1,19 @@
+log_level: 0  #debug:5
+
+patch:
+  plan_tgt_branch_list: [ "dev","qa" ] #默认计划要推的分支
+  branch_alias:  #分支别名
+    v6.0: QCE_V6.0-20220630
+    v6.1: QCE_V6.1-20221230
+    v6.2: QCE_V6.2-20231230
+
+gitLab_configs:
+  - base_url: https://github.com
+    token: "gitlab Access Tokens 用于自动创建mr,合并mr"
+
+repo:
+  dev-tool:
+    # 自动合并完成后执行的命令，可用用于配置jenkins刷代码
+    auto_merge_branch_hook:
+      dev: ""
+      qa: ""
