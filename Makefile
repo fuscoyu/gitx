@@ -5,13 +5,13 @@ j=VM-1888 #jiraID
 b=dev #分支 可以逗号分隔
 
 build:
-	go build -o $(shell echo $$GOPATH/bin/pitrixpush)  main.go
+	go build -o $(shell echo $$GOPATH/bin/gitx)  main.go
 
 .PHONY: bin
 bin:
-	GOOS=linux GOARCH=amd64 go build -o $(shell echo $$PWD/bin/pitrixpush_Linux_x86_64) main.go
-	GOOS=darwin GOARCH=amd64 go build -o $(shell echo $$PWD/bin/pitrixpush_Darwin_x86_64) main.go
-	GOOS=darwin GOARCH=arm64 go build -o $(shell echo $$PWD/bin/pitrixpush_Darwin_arm64) main.go
+	GOOS=linux GOARCH=amd64 go build -o $(shell echo $$PWD/bin/gitx_Linux_x86_64) main.go
+	GOOS=darwin GOARCH=amd64 go build -o $(shell echo $$PWD/bin/gitx_Darwin_x86_64) main.go
+	GOOS=darwin GOARCH=arm64 go build -o $(shell echo $$PWD/bin/gitx_Darwin_arm64) main.go
 
 
 add:
