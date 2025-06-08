@@ -10,8 +10,8 @@
 6. 合并mr
 7. 删除本地以及远程的临时分支
 
-如果某个JIRA 需要修复v6.0,v6.1,v6.2,且这个JIRA 需要修改三个项目,pitrix-common,pitrix-ws,pitrix-fg,那以上7步操作你需要执行 
-(dev,qa,staging,v6.0,v6.1,v6.2) * (pitrix-common,pitrix-ws,pitrix-fg)=6x3=18次    
+如果某个JIRA 需要修复v6.0,v6.1,v6.2,且这个JIRA 需要修改三个项目,A,B,C,那以上7步操作你需要执行 
+(dev,qa,staging,v6.0,v6.1,v6.2) * (A,B,C)=6x3=18次    
 假设不用处理冲突，执行一次2分钟，18x2=36分钟 合一个JIRA就需要半个小时。
 
 
@@ -51,8 +51,7 @@ develop 分支: VM-2003_Tpsc_Migrate_develop，代码修改都在这个分支上
    ```
    sudo wget -O /usr/local/bin/gitx "https://github.com/goeoeo/gitx/releases/download/v0.0.1/gitx_$(uname -s)_$(uname -m)"  && sudo chmod +x /usr/local/bin/gitx
    ```
-   mac下遇到以下错误,到设置->隐私与安全中 授权一下   
-   ![](README/img.png)
+   注意：mac下遇到无法打开gitx的错误,需要到到设置->隐私与安全中 授权一下   
 
 2. 初始化配置文件  
    gitx init
