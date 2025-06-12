@@ -43,7 +43,7 @@ func FindOriginURL(pwd string) (string, error) {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				url := convertGitToHTTP(strings.TrimSpace(parts[1]))
-				url = strings.TrimRight(url, ".git")
+				url = strings.TrimSuffix(url, ".git")
 				return url, nil
 			}
 		}
