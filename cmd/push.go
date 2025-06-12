@@ -95,7 +95,7 @@ func init() {
 	PushCmd.PersistentFlags().BoolVarP(&disableAutoMergeHook, "disableAutoMergeHook", "a", false, "自动合并不执行hook")
 	PushCmd.PersistentFlags().BoolVarP(&force, "force", "f", false, "忽略本地记录，cherry-pick所有commit")
 	PushCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "开启debug日志")
-	PushCmd.PersistentFlags().BoolVarP(&autoCreateMr, "autoCreateMr", "m", false, "自动创建mr")
+	PushCmd.PersistentFlags().BoolVarP(&autoMergeMr, "autoMergeMr", "m", false, "自动合并mr")
 }
 
 func pushProject(project string, config *repo.Config) (mergeUrls []*repo.RepoPushResult, err error) {
@@ -105,8 +105,7 @@ func pushProject(project string, config *repo.Config) (mergeUrls []*repo.RepoPus
 		return
 	}
 
-	if autoCreateMr {
-		r.CreateMr = true
+	if autoMergeMr {
 		r.AutoMergeBranchList = strings.Split(branchList, ",")
 	}
 

@@ -108,8 +108,9 @@ func (c *Config) parsePwd() (err error) {
 	projectName := util.GetLastDir(c.pwd)
 
 	r := &Repo{
-		Name: util.GetLastDir(c.pwd),
-		Path: c.pwd,
+		Name:     util.GetLastDir(c.pwd),
+		Path:     c.pwd,
+		CreateMr: true,
 	}
 
 	if r.Url, err = util.FindOriginURL(c.pwd); err != nil {

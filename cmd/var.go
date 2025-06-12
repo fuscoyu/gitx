@@ -10,5 +10,5 @@ var (
 	force                bool   //忽略本地记录，cherry-pick所有commit
 	debug                bool   //开启debug日志
 	disableAutoMergeHook bool   //自动合并后是否执行hook
-	autoCreateMr         bool   //自动创建mr
+	autoMergeMr          bool   //自动合并Mr
 )
