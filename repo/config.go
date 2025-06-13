@@ -108,7 +108,7 @@ func (c *Config) parsePwd() (err error) {
 	projectName := util.GetLastDir(c.pwd)
 
 	r := &Repo{
-		Name:     util.GetLastDir(c.pwd),
+		Name:     projectName,
 		Path:     c.pwd,
 		CreateMr: true,
 	}
@@ -118,12 +118,14 @@ func (c *Config) parsePwd() (err error) {
 	}
 
 	find := false
-	for _, v := range c.Repo {
+	for rProjectName, v := range c.Repo {
 		//配置文件中存在配置
-		if v.Name == projectName {
+		if rProjectName == projectName {
 			find = true
 			v.Url = util.Default(v.Url, r.Url)
 			v.Path = util.Default(v.Path, r.Path)
+			v.CreateMr = r.CreateMr
+			v.Name = r.Name
 			break
 		}
 
