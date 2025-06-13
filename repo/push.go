@@ -449,22 +449,25 @@ func (r *RepoPush) waitMrMerged(mrId int) (merged bool) {
 }
 
 func (r *RepoPush) AutoMergeBranchHook() {
-	cmdStr, ok := r.repo.AutoMergeBranchHook[r.RepoPushPatch.TgtBranch]
+	cmdStrArr, ok := r.repo.AutoMergeBranchHook[r.RepoPushPatch.TgtBranch]
 	if !ok {
 		return
 	}
 
-	// 使用Command函数解析字符串为命令
-	cmd := exec.Command("sh", "-c", cmdStr)
+	for _, cmdStr := range cmdStrArr {
+		// 使用Command函数解析字符串为命令
+		cmd := exec.Command("sh", "-c", cmdStr)
 
-	// 运行命令，并获取输出
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logrus.Infof("AutoMergeBranchHook err:%s", err)
-		return
+		// 运行命令，并获取输出
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			logrus.Infof("AutoMergeBranchHook err:%s", err)
+			return
+		}
+
+		fmt.Printf("执行hook:%s\n 输出结果:\n%s\n", cmdStr, string(output))
 	}
 
-	fmt.Printf("执行hook:%s\n 输出结果:\n%s", cmdStr, string(output))
 }
 
 func (r *RepoPush) newBranchName(jiraID, jiraDesc, tgtBranch string) string {

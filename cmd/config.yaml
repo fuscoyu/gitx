@@ -15,5 +15,7 @@ repo:
   dev-tool:
     # 自动合并完成后执行的命令，可用用于配置jenkins刷代码
     auto_merge_branch_hook:
-      dev: ""
-      qa: ""
+      dev:
+        - ""
+      qa:
+        - ""

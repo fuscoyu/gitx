@@ -28,12 +28,12 @@ type Config struct {
 }
 
 type Repo struct {
-	Name                string            `yaml:"name"`
-	Url                 string            `yaml:"url"`
-	Path                string            `yaml:"path"`
-	CreateMr            bool              `yaml:"create_mr"`              //自动创建mr
-	AutoMergeBranchList []string          `yaml:"auto_merge_branch_list"` //自动合并的分支
-	AutoMergeBranchHook map[string]string `yaml:"auto_merge_branch_hook"` //自动合并分支后触发的操作
+	Name                string              `yaml:"name"`
+	Url                 string              `yaml:"url"`
+	Path                string              `yaml:"path"`
+	CreateMr            bool                `yaml:"create_mr"`              //自动创建mr
+	AutoMergeBranchList []string            `yaml:"auto_merge_branch_list"` //自动合并的分支
+	AutoMergeBranchHook map[string][]string `yaml:"auto_merge_branch_hook"` //自动合并分支后触发的操作
 }
 
 type Patch struct {
