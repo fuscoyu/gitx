@@ -20,15 +20,16 @@ var JiraCmd = &cobra.Command{
 			project = config.Patch.CurrentProject
 		}
 
+		fmt.Println("current project:", project)
 		switch action {
 		case "add":
 			err = jc.Add(project, jiraID, strings.Split(branchList, ","))
 		case "del":
 			err = jc.Del(project, jiraID)
 		case "clear":
-			err = jc.Clear()
+			err = jc.Clear(project, disableCheckMerged)
 		case "print":
-			jc.Print(jiraID)
+			err = jc.Print(project, jiraID)
 		default:
 			err = fmt.Errorf("action not suppert:%s", action)
 		}
@@ -45,6 +46,8 @@ func init() {
 	JiraCmd.Flags().StringVarP(&project, "project", "p", "", "项目")
 	JiraCmd.Flags().StringVarP(&jiraID, "jiraId", "j", "", "jiraID")
 	JiraCmd.Flags().StringVarP(&branchList, "branchList", "b", "", "目标分支，支持逗号分隔")
+	JiraCmd.PersistentFlags().BoolVarP(&disableCheckMerged, "disableCheckMerged", "d", false, "删除临时分支前是否检查已经合并")
+
 }
 
 func defaultConfigPath() string {

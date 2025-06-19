@@ -204,5 +204,5 @@ func (j *Jira) GetDesc() string {
 		}
 	}
 
-	return j.JiraID
+	return j.JiraID + ":" + j.CommitMessage
 }

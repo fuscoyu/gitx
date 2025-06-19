@@ -63,6 +63,36 @@ func (jm *JiraMgr) DelJira(project, jiraID string) (err error) {
 	return jm.Save()
 }
 
+func (jm *JiraMgr) Detach(project, jiraID, branch string) (err error) {
+	var (
+		targetBranchList []string
+		branchList       []*JiraBranch
+	)
+	for _, v := range jm.JiraList {
+		if v.Project == project && v.JiraID == jiraID {
+
+			for _, b := range v.TargetBranch {
+				if b != branch {
+					targetBranchList = append(targetBranchList, b)
+				}
+			}
+
+			v.TargetBranch = targetBranchList
+			for _, b := range v.BranchList {
+				if b.TargetBranch != branch {
+					branchList = append(branchList, b)
+				}
+			}
+
+			v.BranchList = branchList
+
+		}
+
+	}
+	return jm.Save()
+
+}
+
 func (jm *JiraMgr) savePath() string {
 	return jm.saveDir + "/" + "jira.json"
 }

@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -18,13 +19,15 @@ import (
 var cfg *Config
 
 type Config struct {
-	Repo          map[string]*Repo `yaml:"repo"`
-	Patch         *Patch           `yaml:"patch"`
-	HomeDir       string           `yaml:"home_dir"`
-	LogLevel      int              `yaml:"log_level"`
-	GitLabConfigs []*GitLabConfig  `yaml:"gitLab_configs"`
-	pwd           string
-	logBuffer     bytes.Buffer
+	Repo           map[string]*Repo `yaml:"repo"`
+	Patch          *Patch           `yaml:"patch"`
+	HomeDir        string           `yaml:"home_dir"`
+	LogLevel       int              `yaml:"log_level"`
+	GitLabConfigs  []*GitLabConfig  `yaml:"gitLab_configs"`
+	pwd            string
+	logBuffer      bytes.Buffer
+	projectRepoUrl map[string]*Repo //存储project对应的repo地址
+	DisableInitLog bool
 }
 
 type Repo struct {
@@ -96,7 +99,9 @@ func GetConfig(configPaths ...string) *Config {
 	if config.Patch.TmpBranchFmt == "" {
 		config.Patch.TmpBranchFmt = "{jiraID}_{jiraDesc}_{tgtBranch}"
 	}
+
 	cfg = config
+
 	return cfg
 }
 
@@ -114,6 +119,12 @@ func (c *Config) parsePwd() (err error) {
 	}
 
 	if r.Url, err = util.FindOriginURL(c.pwd); err != nil {
+		logrus.Debugf("FindOriginURL err:%s", err)
+		return nil
+	}
+
+	c.projectRepoUrl[projectName] = r
+	if err = c.writeProjectRepoUrl(); err != nil {
 		return
 	}
 
@@ -140,8 +151,21 @@ func (c *Config) parsePwd() (err error) {
 }
 
 func (c *Config) Init() *Config {
-	if err := c.parsePwd(); err != nil {
-		logrus.Fatalf("当前目标非git项目目录，err:%s", err)
+	var (
+		err error
+	)
+	defer func() {
+		if err != nil {
+			logrus.Fatalf("Config Init ，err:%s", err)
+		}
+	}()
+
+	if err = c.readProjectRepoUrl(); err != nil {
+		return nil
+	}
+
+	if err = c.parsePwd(); err != nil {
+		return nil
 	}
 
 	if c.Patch.JiraDesc == "" {
@@ -165,7 +189,9 @@ func (c *Config) Init() *Config {
 		c.Patch.DevBranch = AutoBranch(c.pwd)
 	}
 
-	c.InitLog()
+	if !c.DisableInitLog {
+		c.InitLog()
+	}
 
 	logrus.Debugf("get c ok! \n %v", c.Patch)
 	return c
@@ -249,6 +275,32 @@ func (c *Config) CheckErr(err error) {
 	os.Stdout.Write(logBytes)
 
 	logrus.Fatalf("err:%s\n", err)
+}
+
+func (c *Config) readProjectRepoUrl() (err error) {
+	projectRepoUrlFile := path.Join(c.HomeDir, "repo.json")
+
+	c.projectRepoUrl = make(map[string]*Repo)
+	if err = util.ReadJsonFile(projectRepoUrlFile, &c.projectRepoUrl); err != nil {
+		return
+	}
+
+	for project, repoTmp := range c.projectRepoUrl {
+		if repo, ok := c.Repo[project]; ok {
+			repo.Path = repoTmp.Path
+			repo.Url = repoTmp.Url
+		} else {
+			c.Repo[project] = repoTmp
+		}
+
+	}
+
+	return
+}
+
+func (c *Config) writeProjectRepoUrl() (err error) {
+	projectRepoUrlFile := path.Join(c.HomeDir, "repo.json")
+	return util.WriteJsonFile(projectRepoUrlFile, &c.projectRepoUrl)
 }
 
 func (p *Patch) GetTgtBranchs() (res []string) {

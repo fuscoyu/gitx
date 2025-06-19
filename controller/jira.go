@@ -10,13 +10,15 @@ import (
 )
 
 type JiraController struct {
-	config *repo.Config
-	jm     *model.JiraMgr
+	config        *repo.Config
+	jm            *model.JiraMgr
+	projectBranch map[string][]string
 }
 
 func NewJiraController(config *repo.Config) (jc *JiraController, err error) {
 	jc = &JiraController{
-		config: config,
+		config:        config,
+		projectBranch: make(map[string][]string),
 	}
 
 	//载入jira数据
@@ -27,12 +29,17 @@ func NewJiraController(config *repo.Config) (jc *JiraController, err error) {
 
 // Clear 检查目标分支中是否已合并定时任务若，若已合并则标记，同时删除本地以及远程分支
 // 配合定时任务，保持本地项目和远程项目的分支简洁性
-func (jc *JiraController) Clear() (err error) {
+func (jc *JiraController) Clear(project string, disableCheckMerged bool) (err error) {
 	//载入jira数据
 	for _, j := range jc.jm.JiraList {
+
+		if project != "" && j.Project != project {
+			continue
+		}
+
 		merged := 0
 		for _, jb := range j.BranchList {
-			if err = jc.delBranch(j, jb); err != nil {
+			if err = jc.delBranch(j, jb, disableCheckMerged); err != nil {
 				return
 			}
 			if jb.Merged {
@@ -70,12 +77,28 @@ func (jc *JiraController) Del(project, jiraID string) (err error) {
 	return jc.jm.DelJira(project, jiraID)
 }
 
-func (jc *JiraController) delBranch(j *model.Jira, jb *model.JiraBranch) (err error) {
+func (jc *JiraController) Detach(project, jiraID, branch string) error {
+	return jc.jm.Detach(project, jiraID, branch)
+}
+
+func (jc *JiraController) delBranch(j *model.Jira, jb *model.JiraBranch, disableCheckMerged bool) (err error) {
 	var (
 		merged bool
+		ok     bool
 	)
-	if jb.DevBranch == "" || jb.Merged {
+
+	if jb.DevBranch == "" {
 		return
+	}
+
+	if jb.Merged {
+		if ok, err = jc.branchExists(j, jb); err != nil {
+			return
+		}
+
+		if !ok {
+			return
+		}
 	}
 
 	repoCfg := jc.config.Repo[j.Project]
@@ -85,16 +108,24 @@ func (jc *JiraController) delBranch(j *model.Jira, jb *model.JiraBranch) (err er
 
 	git := repo.NewGitRepo(repoCfg.Path, repoCfg.Url)
 
-	if merged, err = jc.checkBranchMerged(j, jb); err != nil {
-		return
+	if !disableCheckMerged {
+		if merged, err = jc.checkBranchMerged(j, jb); err != nil {
+			return
+		}
+		if !merged {
+			logrus.Infof("跳过，分支未合并:%s \n", jb.BranchName)
+			return
+		}
+
+		//包含后标记
+		jb.Merged = true
 	}
-	if !merged {
-		logrus.Infof("跳过，分支未合并:%s \n", jb.BranchName)
+
+	if !jb.Merged {
+		logrus.Infof("跳过，分支未合并1:%s \n", jb.BranchName)
 		return
 	}
 
-	//包含后标记
-	jb.Merged = true
 	logrus.Infof("正在删除分支:%s \n", jb.BranchName)
 
 	//删除远程分支
@@ -110,7 +141,64 @@ func (jc *JiraController) delBranch(j *model.Jira, jb *model.JiraBranch) (err er
 	return
 }
 
-// checkBranchMerged 检查分支是否合并
+func (jc *JiraController) branchExists(j *model.Jira, jb *model.JiraBranch) (exists bool, err error) {
+	var (
+		branchList []string
+	)
+
+	if _, ok := jc.projectBranch[j.Project]; !ok {
+		repoCfg := jc.config.Repo[j.Project]
+		if repoCfg == nil {
+			return false, fmt.Errorf("项目仓库信息缺失:%s", j.Project)
+		}
+
+		git := repo.NewGitRepo(repoCfg.Path, repoCfg.Url)
+		if branchList, err = git.GetBranchs(); err != nil {
+			return
+		}
+		util.PrintJson(branchList)
+		jc.projectBranch[j.Project] = branchList
+	}
+
+	branchList = jc.projectBranch[j.Project]
+	for _, v := range branchList {
+		if v == jb.TargetBranch {
+			return true, nil
+		}
+
+	}
+
+	return false, nil
+
+}
+
+func (jc *JiraController) CheckBranchMerged(project, jiraId string) (err error) {
+	for _, j := range jc.jm.JiraList {
+
+		if project != "" && j.Project != project {
+			continue
+		}
+
+		if jiraId != "" && j.JiraID != jiraId {
+			continue
+		}
+
+		for _, jb := range j.BranchList {
+			merged, err := jc.checkBranchMerged(j, jb)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("project:%s,jiradID:%s,Branch:%s,Merged:%t\n", j.Project, j.JiraID, jb.BranchName, merged)
+
+		}
+	}
+
+	return
+
+}
+
+// checkBranchMerged 检查分支对应的JIRA是否已合并
 func (jc *JiraController) checkBranchMerged(j *model.Jira, jb *model.JiraBranch) (merged bool, err error) {
 	var (
 		commits []*model.CommitInfo
@@ -120,10 +208,10 @@ func (jc *JiraController) checkBranchMerged(j *model.Jira, jb *model.JiraBranch)
 		return
 	}
 	repoCfg := jc.config.Repo[j.Project]
-	if repoCfg == nil {
+	if repoCfg == nil || repoCfg.Url == "" {
 		return false, fmt.Errorf("项目仓库信息缺失:%s", j.Project)
 	}
-
+	logrus.Debugf("satrt checkBranchMerged:%s", j.Project)
 	git := repo.NewGitRepo(repoCfg.Path, repoCfg.Url)
 	//check 目标分支
 	if err = git.SwitchBranch(jb.TargetBranch); err != nil {
@@ -162,6 +250,9 @@ func (jc *JiraController) checkBranchMerged(j *model.Jira, jb *model.JiraBranch)
 		return
 	}
 
+	logrus.Debugf(">>>>>>%s,lastcommitTime:%s", jb.TargetBranch, lci.CreateTime)
+	//util.PrintJson(commits)
+
 	after := false
 	for _, c := range commits {
 		if c.CreateTime.After(lci.CreateTime) {
@@ -181,14 +272,13 @@ func (jc *JiraController) checkBranchMerged(j *model.Jira, jb *model.JiraBranch)
 }
 
 // Print 打印出那些为合并完成的Jira
-func (jc *JiraController) Print(jiraId string) {
+func (jc *JiraController) Print(project, jiraId string) (err error) {
 	var (
 		rows [][]string
 	)
 
-	if err := jc.syncMergeInfo(); err != nil {
-		logrus.Infof("同步merge信息错误:%v", err)
-		return
+	if err = jc.syncMergeInfo(project, jiraId); err != nil {
+		return fmt.Errorf("同步merge信息错误:%v", err)
 	}
 
 	for _, jr := range jc.jm.JiraList {
@@ -196,10 +286,17 @@ func (jc *JiraController) Print(jiraId string) {
 			continue
 		}
 
+		if project != "" && jr.Project != project {
+			continue
+		}
+
 		if jiraId != "" && jr.JiraID != jiraId {
 			continue
 		}
 		sort.Slice(jr.BranchList, func(i, j int) bool {
+			if jr.BranchList[i].DevBranch != jr.BranchList[j].DevBranch {
+				return jr.BranchList[i].DevBranch > jr.BranchList[j].DevBranch
+			}
 			return jr.BranchList[i].TargetBranch < jr.BranchList[j].TargetBranch
 		})
 
@@ -226,15 +323,25 @@ func (jc *JiraController) Print(jiraId string) {
 	}
 
 	util.PrintTable(rows, nil)
+
+	return
 }
 
 // syncMergeInfo 合并同步信息
-func (jc *JiraController) syncMergeInfo() (err error) {
+func (jc *JiraController) syncMergeInfo(project, jiraId string) (err error) {
 	var (
 		merged   bool
 		saveData bool
 	)
 	for _, jr := range jc.jm.JiraList {
+		if project != "" && jr.Project != project {
+			continue
+		}
+
+		if jiraId != "" && jiraId != jr.JiraID {
+			continue
+		}
+
 		for _, jb := range jr.BranchList {
 			if jb.Merged || jb.DevBranch == "" {
 				continue

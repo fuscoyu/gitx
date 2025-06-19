@@ -11,4 +11,5 @@ var (
 	debug                bool   //开启debug日志
 	disableAutoMergeHook bool   //自动合并后是否执行hook
 	autoMergeMr          bool   //自动合并Mr
+	disableCheckMerged   bool   //删除临时分支前是否检查已经合并
 )

@@ -2,6 +2,7 @@ package util
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -68,4 +69,43 @@ func convertGitToHTTP(url string) string {
 
 	// 已经是 HTTP 或无法转换
 	return url
+}
+
+func ReadJsonFile(f string, v any) (err error) {
+	var (
+		c []byte
+	)
+
+	if !FileExists(f) {
+		return
+	}
+
+	if c, err = os.ReadFile(f); err != nil {
+		return
+	}
+
+	if err = json.Unmarshal(c, v); err != nil {
+		return
+	}
+	return
+}
+
+func WriteJsonFile(f string, v any) (err error) {
+	var (
+		c []byte
+	)
+
+	if c, err = json.Marshal(v); err != nil {
+		return
+	}
+	if err = os.WriteFile(f, c, os.ModePerm); err != nil {
+		return
+	}
+
+	return
+}
+
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }
