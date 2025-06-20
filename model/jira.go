@@ -39,9 +39,10 @@ type (
 	}
 
 	CommitInfo struct {
-		CommitId   string
-		Desc       string
-		CreateTime time.Time
+		CommitId     string
+		Desc         string
+		CreateTime   time.Time
+		TargetExists bool //目标中已包含该commit
 	}
 	MrInfo struct {
 		Title  string

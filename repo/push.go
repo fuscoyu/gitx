@@ -339,6 +339,8 @@ func (r *RepoPush) push() (result *RepoPushResult, err error) {
 				result.AddCommits(commit)
 			} else {
 				fmt.Printf("目标分支已包含该commit[%s,%s]\n", tgtBranch, commit.CommitId[0:10])
+				commit.TargetExists = true
+				result.AddCommits(commit)
 			}
 			continue
 		}
@@ -358,7 +360,7 @@ func (r *RepoPush) push() (result *RepoPushResult, err error) {
 		return
 	}
 
-	if len(result.OutCommits) == 0 {
+	if result.NewCommitsLen() == 0 {
 		return
 	}
 
@@ -487,4 +489,14 @@ func (r *RepoPush) newBranchName(jiraID, jiraDesc, tgtBranch string) string {
 
 func (rpr *RepoPushResult) AddCommits(commit *model.CommitInfo) {
 	rpr.OutCommits = append(rpr.OutCommits, commit)
+}
+
+func (rpr *RepoPushResult) NewCommitsLen() int {
+	num := 0
+	for _, v := range rpr.OutCommits {
+		if !v.TargetExists {
+			num++
+		}
+	}
+	return num
 }
