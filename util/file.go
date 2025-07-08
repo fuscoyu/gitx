@@ -40,7 +40,7 @@ func FindOriginURL(pwd string) (string, error) {
 		}
 
 		// 在 origin section 中查找 URL
-		if inOriginSection && strings.HasPrefix(line, "url =") {
+		if inOriginSection && strings.HasPrefix(line, "url") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				url := convertGitToHTTP(strings.TrimSpace(parts[1]))
