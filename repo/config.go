@@ -160,6 +160,10 @@ func (c *Config) Init() *Config {
 		}
 	}()
 
+	if c.Repo == nil {
+		c.Repo = make(map[string]*Repo)
+	}
+
 	if err = c.readProjectRepoUrl(); err != nil {
 		return nil
 	}
