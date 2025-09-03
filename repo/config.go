@@ -3,17 +3,18 @@ package repo
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"regexp"
+	"strings"
+
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/goeoeo/gitx/model"
 	"github.com/goeoeo/gitx/util"
 	"github.com/sirupsen/logrus"
 	"github.com/zput/zxcTool/ztLog/zt_formatter"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"os"
-	"path"
-	"regexp"
-	"strings"
 )
 
 var cfg *Config
@@ -330,5 +331,19 @@ func (p *Patch) GetPlanTgtBranchList() (res []string) {
 
 		res = append(res, branchName)
 	}
+	return
+}
+
+// TransBranch 翻译分支名
+func (c *Config) TransBranch(branchList []string) (res []string) {
+	for _, branchName := range branchList {
+		alias, ok := c.Patch.BranchAlias[branchName]
+		if ok {
+			branchName = alias
+		}
+
+		res = append(res, branchName)
+	}
+
 	return
 }

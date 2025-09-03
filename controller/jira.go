@@ -2,11 +2,12 @@ package controller
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/goeoeo/gitx/model"
 	"github.com/goeoeo/gitx/repo"
 	"github.com/goeoeo/gitx/util"
 	"github.com/sirupsen/logrus"
-	"sort"
 )
 
 type JiraController struct {
@@ -68,6 +69,9 @@ func (jc *JiraController) Add(project, jiraID string, targetBranch []string) (er
 	if len(targetBranch) == 0 {
 		return fmt.Errorf("目标分支不能为空")
 	}
+
+	//翻译分支名
+	targetBranch = jc.config.TransBranch(targetBranch)
 
 	return jc.jm.AddJira(project, jiraID, targetBranch)
 }
