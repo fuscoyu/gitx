@@ -254,7 +254,7 @@ func (jc *JiraController) checkBranchMerged(j *model.Jira, jb *model.JiraBranch)
 		return
 	}
 
-	logrus.Debugf(">>>>>>%s,lastcommitTime:%s", jb.TargetBranch, lci.CreateTime)
+	logrus.Debugf(">>>>>>%s,lastcommitTime:%v", jb.TargetBranch, lci.CreateTime)
 	//util.PrintJson(commits)
 
 	after := false

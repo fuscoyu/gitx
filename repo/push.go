@@ -345,7 +345,7 @@ func (r *RepoPush) push() (result *RepoPushResult, err error) {
 			continue
 		}
 		logrus.Debugf("git cherry-pick commit [%s] faild: repo: %s, branch [%s], err: %v \n",
-			commit, r.GitRepo.Path, tgtBranch, err)
+			commit.CommitId, r.GitRepo.Path, tgtBranch, err)
 
 		if err = checkCommit(commit); err != nil {
 			return
