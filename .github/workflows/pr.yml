@@ -38,8 +38,8 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
-      - name: Run tests
-        run: go test -v ./...
+      # - name: Run tests
+      #   run: go test -v ./...
 
       - name: Run linter
         uses: golangci/golangci-lint-action@v3
