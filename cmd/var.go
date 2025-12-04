@@ -2,6 +2,7 @@ package cmd
 
 var (
 	branchList           string //目标分支逗号分隔
+	branch               string //目标分支
 	planTgtBranchList    string //计划要推的分支列表,逗号分隔
 	action               string //jira 执行的动作
 	configPath           string //配置文件

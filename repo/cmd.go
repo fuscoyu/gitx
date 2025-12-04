@@ -3,9 +3,10 @@ package repo
 import (
 	"bytes"
 	"context"
-	"github.com/sirupsen/logrus"
 	"os/exec"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type CmdRet struct {
@@ -40,16 +41,22 @@ func execC(ctx context.Context, cmd *exec.Cmd) (*CmdRet, error) {
 		isPrint = true
 	}
 	err := cmd.Run()
-	if err != nil {
-		logrus.Debugf("failed to call Run(): %v \n", err)
-	}
 	sdo := stdout.String()
 	sde := stderr.String()
 	if isPrint {
 		logrus.Debugf("out:\n[%s]\n", sdo)
 		if sde != "" {
-			logrus.Errorf("err:%s", sde)
+			if err != nil {
+				// 命令失败时，stderr 作为错误输出
+				logrus.Errorf("err:%s", sde)
+			} else {
+				// 命令成功时，stderr 作为调试信息（git 的信息性消息常输出到 stderr）
+				logrus.Debugf("stderr:%s", sde)
+			}
 		}
+	}
+	if err != nil {
+		logrus.Debugf("failed to call Run(): %v \n", err)
 	}
 	cmdRet := &CmdRet{
 		Out:    sdo,
